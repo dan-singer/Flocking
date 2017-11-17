@@ -236,7 +236,7 @@ public abstract class Vehicle : MonoBehaviour {
     /// <typeparam name="T">Type of object to separate from</typeparam>
     /// <param name="vehicles">List of objects to separate from</param>
     /// <param name="radius">Radius around this object in which vehicles should be separated from</param>
-    protected Vector3 Separate<T>(List<T> vehicles, float radius) where T:MonoBehaviour
+    protected Vector3 Separate<T>(List<T> vehicles, float radius) where T:Component
     {
         Vector3 netForce = Vector3.zero;
         float radiusSqr = radius * radius;

@@ -64,7 +64,8 @@ public class DebugLineRenderer : MonoBehaviour {
     /// </summary>
 	void Start () {
         lines = new List<LineInfo>();
-        debugShapeRend = debugShape.GetComponent<Renderer>();
+        if (debugShape)
+            debugShapeRend = debugShape.GetComponent<Renderer>();
 
         //Only hide the debugShape when Draw state is changed, no need to set this each frame.
         DrawChanged += (draw) => {
@@ -81,6 +82,8 @@ public class DebugLineRenderer : MonoBehaviour {
     /// <param name="end">Ending point of line</param>
     public void DrawLine(int matIndex, Vector3 start, Vector3 end)
     {
+        if (matIndex >= materials.Length)
+            return;
         lines.Add(new LineInfo(materials[matIndex], start, end));
     }
 
