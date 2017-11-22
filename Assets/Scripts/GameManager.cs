@@ -32,30 +32,41 @@ public class GameManager : MonoBehaviour {
 
     //Terrain and boundaries
     public Terrain terrain;
-    public GameObject innerBounds;
+    public GameObject innerBoundary;
     public Vector3 flockBoundSize;
 
 
-
+    //Object lists
     public List<Transform> Obstacles { get; private set; }
     public List<Transform> Flockers { get; private set; }
+
+
+    //Store average flock direction and location
+    public Vector3 AverageFlockDirection { get; private set; }
+    public Vector3 AverageFlockPosition { get; private set; }
+
+    
+    private DebugLineRenderer debugLineRenderer;
 
     /// <summary>
     /// Spawn obstacles and flockers
     /// </summary>
 	void Start () {
+        debugLineRenderer = GetComponent<DebugLineRenderer>();
         Obstacles = new List<Transform>();
         int obstacles = (int)Random.Range(obstacleMinMax.x, obstacleMinMax.y+1);
         for (int i = 0; i < obstacles; i++)
-            Obstacles.Add(SpawnOnTerrain(obstaclePrefab).transform);
+            Obstacles.Add(SpawnOnTerrain(obstaclePrefab, innerBoundary.GetComponent<Renderer>().bounds).transform);
 
         Bounds flockBounds = new Bounds(Vector3.zero, flockBoundSize);
-        flockBounds.center = GetRandomPosOnTerrain();
+        flockBounds.center = GetRandomPosOnTerrain(innerBoundary.GetComponent<Renderer>().bounds);
 
         Flockers = new List<Transform>();
         int flockers = (int)Random.Range(flockerMinMax.x, flockerMinMax.y+1);
         for (int i = 0; i < flockers; i++)
             Flockers.Add(SpawnOnTerrain(flockerPrefab, flockBounds).transform);
+
+        DebugLineRenderer.Draw = true;
     }
 
     /// <summary>
@@ -84,8 +95,30 @@ public class GameManager : MonoBehaviour {
         return loc;
     }
 
-    // Update is called once per frame
+    /// <summary>
+    /// Each frame, calculate average flock location and direction, and draw debug lines and shapes.
+    /// </summary>
     void Update () {
-		
-	}
+
+        //Calculate average flock direction and position
+        Vector3 avgDir = Vector3.zero;
+        Vector3 avgPos = Vector3.zero;
+        foreach (Transform flocker in Flockers)
+        {
+            avgDir += flocker.forward;
+            avgPos += flocker.position;
+        }
+        AverageFlockDirection = avgDir.normalized;
+        if (Flockers.Count > 0)
+            AverageFlockPosition = avgPos / Flockers.Count;
+
+        //Draw debug lines
+        if (debugLineRenderer)
+        {
+            debugLineRenderer.SetShapeLocation(AverageFlockPosition);
+            //This is so the camera will match the flock's direction
+            debugLineRenderer.SetShapeFwd(AverageFlockDirection); 
+            debugLineRenderer.DrawLine(0, AverageFlockPosition, AverageFlockPosition + AverageFlockDirection * 5);
+        }
+    }
 }

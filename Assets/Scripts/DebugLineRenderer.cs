@@ -98,6 +98,15 @@ public class DebugLineRenderer : MonoBehaviour {
     }
 
     /// <summary>
+    /// If a debug shape exists, set it's forward direction
+    /// </summary>
+    public void SetShapeFwd(Vector3 fwd)
+    {
+        if (debugShape)
+            debugShape.transform.forward = fwd;
+    }
+
+    /// <summary>
     /// If Draw is true, render each line in the lines array.
     /// </summary>
     private void OnRenderObject()

@@ -38,7 +38,8 @@ public abstract class Vehicle : MonoBehaviour {
     public SForceRadiusInfo avoidInfo;
     public SForceRadiusInfo separationInfo;
     public WanderInfo wanderInfo;
-
+    public SForceInfo alignInfo;
+    public SForceInfo cohereInfo;
 
     public bool ignoreY = true;
 
@@ -175,28 +176,39 @@ public abstract class Vehicle : MonoBehaviour {
     }
 
     /// <summary>
-    /// Get a force to avoid the obstacle within the radius of avoidance.
+    /// Return a force which avoids the most threatening obstacle in the provided list.
     /// </summary>
-    protected Vector3 Avoid(GameObject obstacle, float avoidRadius)
+    protected Vector3 Avoid(List<Transform> obstacles, float avoidRadius)
     {
-        //Ignore obstacles behind the vehicle
-        Vector3 obsLocalPos = obstacle.transform.position - transform.position;
-        float fwdProj = Vector3.Dot(transform.forward, obsLocalPos);
-        if (fwdProj < 0)
-            return Vector3.zero;
+        Vector3 netForce = Vector3.zero;
+        Vector3 desiredVel = Vector3.zero;
+        float nearest = float.MaxValue;
+        foreach (Transform obstacle in obstacles)
+        {
+            //Ignore obstacles behind the vehicle
+            Vector3 obsLocalPos = obstacle.transform.position - transform.position;
+            if (ignoreY)
+                obsLocalPos.y = 0;
+            float fwdProj = Vector3.Dot(transform.forward, obsLocalPos);
+            if (fwdProj < 0)
+                continue;
 
-        //Ignore objects too far away
-        float radSum = coll.Radius + obstacle.GetComponent<Collider>().InnerRadius;
-        if (obsLocalPos.sqrMagnitude > Math.Pow(radSum, 2))
-            return Vector3.zero;
+            //Ignore objects too far away
+            float radSum = coll.Radius + obstacle.GetComponent<Collider>().InnerRadius;
+            if (obsLocalPos.sqrMagnitude > Math.Pow(radSum, 2))
+                continue;
 
-        //Test for non-intersection
-        float rightProj = Vector3.Dot(transform.right, obsLocalPos);
-        if (Mathf.Abs(rightProj) > radSum)
-            return Vector3.zero;
+            //Test for non-intersection
+            float rightProj = Vector3.Dot(transform.right, obsLocalPos);
+            if (Mathf.Abs(rightProj) > radSum)
+                continue;
 
-        //Now we can avoid the obstacle
-        Vector3 desiredVel = transform.right * -Mathf.Sign(rightProj);
+            if (fwdProj < nearest)
+            {
+                nearest = fwdProj;
+                desiredVel = transform.right * -Mathf.Sign(rightProj);
+            }
+        }
         return Seek(transform.position + desiredVel);
     }
 
@@ -256,6 +268,24 @@ public abstract class Vehicle : MonoBehaviour {
         }
         return Seek(transform.position + netForce);
     }
+
+    /// <summary>
+    /// Get a force which will align this vehicle to the specified direction.
+    /// </summary>
+    protected Vector3 Align(Vector3 direction)
+    {
+        Vector3 alignment = Seek(transform.position + direction);
+        return alignment;
+    }
+
+    /// <summary>
+    /// Cohere to the provided center point.
+    /// </summary>
+    protected Vector3 Cohere(Vector3 center)
+    {
+        return Seek(center);
+    }
+
 
     /// <summary>
     /// Set the GameObject's forward to the current Direction.
